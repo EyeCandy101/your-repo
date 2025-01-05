@@ -1,0 +1,42 @@
+name: Build, Push, and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # Step 3: Log in to Docker Hub
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    # Step 4: Build and Push Docker Image
+    - name: Build and Push Docker Image
+      run: |
+        docker buildx build --platform linux/arm64 -t eyecandy101/flask-app:latest --push .
+
+    # Step 5: Configure Kubectl
+    - name: Set up Kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    # Step 6: Deploy to K3s
+    - name: Deploy to K3s
+      env:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      run: |
+        kubectl apply -f deployment/deployment.yaml
+        kubectl apply -f deployment/service.yaml
