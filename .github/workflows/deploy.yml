@@ -36,11 +36,19 @@ jobs:
       uses: azure/setup-kubectl@v3
       with:
         version: 'latest'
+# pre Step 6: ensuring kubectl can connect to the K3s cluster:
+    - name: Test Kubernetes Connectivity
+      env:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      run: kubectl cluster-info
+
 
     # Step 6: Deploy to K3s
     - name: Deploy to K3s
       env:
         KUBECONFIG: ${{ secrets.KUBECONFIG }}
       run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
         kubectl apply -f deployment.yaml
         kubectl apply -f service.yaml
