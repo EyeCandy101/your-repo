@@ -36,19 +36,57 @@ jobs:
       uses: azure/setup-kubectl@v3
       with:
         version: 'latest'
+
+    # Step 6: ensuring kubectl can connect to the K3s cluster:
+
+    - name: Configure Kubernetes Connection
+      run: |
+        mkdir -p ~/.kube
+        cat << EOF > ~/.kube/config
+        apiVersion: v1
+        clusters:
+        - cluster:
+            certificate-authority-data: ${{ secrets.K8S_CERTIFICATE_AUTHORITY_DATA }}
+            server: ${{ secrets.K8S_SERVER }}
+          name: default
+        contexts:
+        - context:
+            cluster: default
+            user: default
+          name: default
+        current-context: default
+        kind: Config
+        preferences: {}
+        users:
+        - name: default
+          user:
+            client-certificate-data: ${{ secrets.K8S_CLIENT_CERTIFICATE_DATA }}
+            client-key-data: ${{ secrets.K8S_CLIENT_KEY_DATA }}
+        EOF
+   
+    # Step 7: Deploy to K3s
+    - name: Deploy to K3s
+      run: |
+        kubectl apply -f deployment.yaml
+        kubectl apply -f service.yaml
+      
+
+ 
+        
 # pre Step 6: ensuring kubectl can connect to the K3s cluster:
-    - name: Test Kubernetes Connectivity
-      env:
-        KUBECONFIG: ${{ secrets.KUBECONFIG }}
-      run: kubectl cluster-info
+  #  - name: Test Kubernetes Connectivity
+  #    env:
+    #    KUBECONFIG: ${{ secrets.KUBECONFIG }}
+    #  run: kubectl cluster-info
 
 
     # Step 6: Deploy to K3s
-    - name: Deploy to K3s
-      env:
-        KUBECONFIG: ${{ secrets.KUBECONFIG }}
-      run: |
-        mkdir -p ~/.kube
-        echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
-        kubectl apply -f deployment.yaml
-        kubectl apply -f service.yaml
+   # - name: Deploy to K3s
+   #   env:
+   #     KUBECONFIG: ${{ secrets.KUBECONFIG }}
+  #    run: |
+   #     mkdir -p ~/.kube
+    #    echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+    #    kubectl apply -f deployment.yaml
+     #   kubectl apply -f service.yaml
+
